@@ -63,7 +63,7 @@ function getPlots(id)
 }
 // create the function to get the demographic info
 function getDemoInfo(id) {
-        d3.json("samples.json").then((data)=> {
+        d3.json("data/samples.json").then((data)=> {
             var metadata = data.metadata;
     
             console.log(metadata)
@@ -93,7 +93,7 @@ function getDemoInfo(id) {
         // select dropdown menu 
         var dropdown = d3.select("#selDataset");
     
-        d3.json("samples.json").then((data)=> {
+        d3.json("data/samples.json").then((data)=> {
             console.log(data)
     
             // get the id data to the dropdwown menu
