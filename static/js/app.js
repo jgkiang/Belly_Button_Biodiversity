@@ -1,106 +1,108 @@
-//Build function to read json file using d3
-function buildMetaData(sample) {
-    d3.json("samples.json").then((data) => {
-      var metadata = data.metadata;
-      console.log(metadata);
-
-    // Filter the data
-    var buildingArray = metadata.filter(sampleObj => sampleObj.id == sample);
-    var result = buildingArray[0];
-    // Use d3 to select the required panel
-    var panelData = d3.select("#sample-metadata");
-
-    // Clear the existing data in the html
-    panelData.html("");
-
-    // Use `Object.entries` to add each key and value pair to the panelData
-    Object.entries(result).forEach(([key, value]) => {
-      panelData.append("h6").text(`${key.toUpperCase()}: ${value}`);
+function getPlots(id) {
+    d3.json("samples.json").then((sampleData) => {
+	    console.log(sampleData);
+	    var ids = sampleData.samples[0].otu_ids;
+        console.log(ids);
+        var sampleValues = sampleData.samples[0].sample_values.slice(0,10).reverse();
+        console.log(sampleValues);
+        var labels = sampleData.samples[0].otu_labels.slice(0,10);
+        console.log(labels);
+        var topOTU = (sampleData.samples[0].otu_ids.slice(0,10)).reverse();
+        var idOTU = topOTU.map(d => "OTU " + d);
+        console.log (`OTU IDs: ${idOTU}`);
     });
-  });
-}
 
-function buildCharts(sample) {
-    d3.json("samples.json").then((data) => {
-      var sampleData = data.samples;
-      var buildingArray = sampleData.filter(sampleObj => sampleObj.id == sample);
-      var result = buildingArray[0];
-  
-      var otu_ids = result.otu_ids;
-      var otu_labels = result.otu_labels;
-      var sample_values = result.sample_values;
+		// BAR CHART
+		var trace1 = {
+			x: sampleValues,
+			y: idOTU,
+			text: labels,
+            mode: 'markers',
+            marker: {
+                // color: ['rgb(93, 164, 214)', 'rgb(255, 144, 14)', 'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
+                size: samples_values.slice(0,10).reverse() //size = sample value
+            }
+		};
 
-      // Build a Bubble Chart
-    var bubbleChart = {
-        title: "Bacteria Cultures Per Sample",
-        hovermode: "closest",
-        xaxis: { title: "OTU ID" },
-      };
-      var bubbleData = [
-        {
-          x: otu_ids,
-          y: sample_values,
-          text: otu_labels,
-          mode: "markers",
-          marker: {
-            size: sample_values,
-            color: otu_ids,
-            colorscale: "Earth"
-          }
-        }
-      ];
-  
-      Plotly.newPlot("bubble", bubbleData, bubbleChart);
-      
-      //Create a horizontal bar chart
-      var yticks = otu_ids.slice(0, 10).map(otuID => `OTU ${otuID}`).reverse();
-      var barData = [
-        {
-          y: yticks,
-          x: sample_values.slice(0, 10).reverse(),
-          text: otu_labels.slice(0, 10).reverse(),
-          type: "bar",
-          orientation: "h",
-        }
-      ];
-  
-      var chartLayout = {
-        title: "Top 10 Bacteria Cultures Found",
-        margin: { t: 30, l: 150 }
-      };
-  
-      Plotly.newPlot("bar", barData, chartLayout);
-    });
-  };
+		var barData = [trace1];
 
-  function init() {
-    // Grab a reference to the dropdown select element
-    var selectDropdown = d3.select("#selDataset");
-  
-    // Populate the select options by using the list of sample names
-    d3.json("samples.json").then((data) => {
-      var name = data.names;
-  
-      name.forEach((sample) => {
-        selectDropdown
-          .append("option")
-          .text(sample)
-          .property("value", sample);
-      })
-  
-      // Use the sample data from the list to build the plots
-      var sampleData = name[0];
-      buildCharts(sampleData);
-      buildMetaData(sampleData);
-    });
-  };
-  
-  function optionChanged(newSample) {
-    // Fetch new data each time a new sample is selected
-    buildCharts(newSample);
-    buildMetaData(newSample);
-  };
+		// Create layout variable to set the layout
+		var barLayout = {
+			title: `<b>Top 10 OTUs<b>`,
+			xaxis: { title: "Sample Value"},
+			yaxis: { title: "OTU ID"},
+			autosize: false,
+			width: 450,
+			height: 600
+		};
 
-  
-// Initialize the dashboard
-  init()
+		// Create the bar plot
+		Plotly.newPlot("bar", barData, barLayout);
+
+		// BUBBLE CHART
+		var trace2 = {
+			x: sampleData.samples[0].otu_ids,
+            y: sampleData.samples[0].sample_values,
+            mode: "markers",
+            marker: {
+                size: sampleData.samples[0].sample_values,
+                color: sampleData.samples[0].otu_ids
+            },
+            text:  sampleData.samples[0].otu_labels
+		};
+		
+		var bubbleData = [trace2];
+		
+		var bubbleLayout = {
+			title: '<b>Bubble Chart of OTU IDs<b>',
+			xaxis: { title: "OTU ID"},
+			showlegend: false,
+		};
+		
+		Plotly.newPlot('bubble', bubbleData, bubbleLayout);
+// create the function to get the demographic info
+function getDemoInfo(id) {
+        d3.json("samples.json").then((data)=> {
+            var metadata = data.metadata;
+    
+            console.log(metadata)
+    
+          // filter meta data info by id
+           var result = metadata.filter(meta => meta.id.toString() === id)[0];
+          // select demographic panel to put data
+           var demographicInfo = d3.select("#sample-metadata");
+            
+         // clear out info
+           demographicInfo.html("");
+    
+         // display each key value from the metadata JSON
+            Object.entries(result).forEach((key) => {   
+                demographicInfo.append("h5").text(key[0].toUpperCase() + ": " + key[1] + "\n");    
+            });
+        });
+    };
+    // create the function for the change event
+    function optionChanged(id) {
+        getPlots(id);
+        getDemoInfo(id);
+    }
+    
+    // create the function for the initial data rendering
+    function init() {
+        // select dropdown menu 
+        var dropdown = d3.select("#selDataset");
+    
+        d3.json("samples.json").then((data)=> {
+            console.log(data)
+
+            names.forEach(name => {
+                dropDown.append('option').text(name).property('value', name);
+            });
+    
+            // call the functions to display the data and the plots to the page
+            getPlots(data.names[0]);
+            getDemoInfo(data.names[0]);
+
+        });
+    };
+};
